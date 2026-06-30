@@ -9,5 +9,5 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && playwright install-deps chromium \
     && rm -rf /var/lib/apt/lists/*
 
-# 1. Cambiamos el directorio de trabajo a la ruta unificada
-WORKDIR /home/node/.n8n-files
+# Directorio de trabajo interno del contenedor
+WORKDIR /app
