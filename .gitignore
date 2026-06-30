@@ -1,0 +1,14 @@
+# Archivos temporales generados por n8n y Python
+data/n8n_shared_data/user_inputs/
+data/n8n_shared_data/*.png
+
+# Conservar tus plantillas cyberpunk base pero ignorar respaldos locales
+!data/n8n_shared_data/templates/
+data/n8n_shared_data/templates/*.bak
+
+# Caché de Python y entornos virtuales locales (si pruebas fuera de Docker)
+__pycache__/
+*.pyc
+.venv/
+venv/
+.env

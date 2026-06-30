@@ -1,0 +1,64 @@
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: n8n_local
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    volumes:
+      - ~/n8n_local_data:/home/node/.n8n
+      # Montamos la carpeta compartida en la ruta segura y autorizada de n8n
+      - ~/n8n_shared_data:/home/node/.n8n-files
+    environment:
+      - GENERIC_TIMEZONE=America/Quito
+      - TZ=America/Quito
+      - WEBHOOK_URL=${WEBHOOK_URL}
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
+    networks:
+      - n8n_stack_network
+
+  renderer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: python_renderer
+    restart: always
+    volumes:
+      - ~/n8n_shared_data:/home/node/.n8n-files
+    # ELIMINAMOS la línea working_dir: /home/node/.n8n-files
+    command: python /home/node/.n8n-files/render.py
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+    networks:
+      - n8n_stack_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis_local
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    networks:
+      - n8n_stack_network
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: ngrok_tunnel
+    restart: unless-stopped
+    command:
+      - "http"
+      - "n8n_local:5678"  # Corregido para que apunte al container_name exacto
+      - "--domain=stonewall-bountiful-steep.ngrok-free.dev"
+    environment:
+      - NGROK_AUTHTOKEN=${NGROK_AUTHTOKEN}
+    networks:
+      - n8n_stack_network
+    depends_on:
+      - n8n
+
+networks:
+  n8n_stack_network:
+    name: n8n_shared_network
+    driver: bridge

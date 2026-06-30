@@ -1,0 +1,1431 @@
+{
+  "name": "DesignerCyberMinds",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message",
+          "callback_query"
+        ],
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -432,
+        128
+      ],
+      "id": "37f4ab48-7be4-4e28-bbc9-2832b1f7c524",
+      "name": "Telegram Trigger",
+      "webhookId": "01c7c70f-512c-4341-a877-02cfdac0fdd7",
+      "credentials": {
+        "telegramApi": {
+          "id": "LPWS7abI6k68jLQ1",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message?.text }}",
+                    "rightValue": "/start",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "start"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -208,
+        128
+      ],
+      "id": "c5926013-76f8-4cf7-ab41-c503044e3109",
+      "name": "Switch Start"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=user:{{ $json.message?.chat?.id || $json.callback_query?.from?.id }}:state",
+        "value": "esperando_red_social"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "08009074-ba76-49bf-84ff-fa6a17a56e29",
+      "name": "Redis: State Social",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $json.message?.chat?.id || $json.callback_query?.from?.id }}",
+        "text": "¡Hola! Vamos a diseñar tu post. ¿Para qué red social estará dirigido?",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Instagram",
+                    "additionalFields": {
+                      "callback_data": "platform:ig"
+                    }
+                  },
+                  {
+                    "text": "LinkedIn",
+                    "additionalFields": {
+                      "callback_data": "platform:linkedin"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "75724189-76d4-4386-939b-7a0327bf1ba7",
+      "name": "Telegram: Ask Social",
+      "webhookId": "699ccf62-4b41-49d4-8f39-6a4d768b1386",
+      "credentials": {
+        "telegramApi": {
+          "id": "LPWS7abI6k68jLQ1",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "state",
+        "key": "=user:{{ $json.message?.chat?.id || $json.callback_query?.from?.id }}:state",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        0,
+        240
+      ],
+      "id": "8459eb26-9e72-4bb3-bdeb-f7c79b2c1536",
+      "name": "Redis: Get State",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.state }}",
+                    "rightValue": "esperando_red_social",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "click_social"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.state }}",
+                    "rightValue": "esperando_carrusel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "click_carrusel"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.state }}",
+                    "rightValue": "esperando_slides",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "input_slides"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.state }}",
+                    "rightValue": "esperando_aspecto",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "click_aspecto"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.state }}",
+                    "rightValue": "esperando_tema",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "input_tema"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.state }}",
+                    "rightValue": "esperando_imagenes",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "input_imagenes"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        240,
+        240
+      ],
+      "id": "12778e20-051d-4b92-899f-0f0509707275",
+      "name": "Switch State Router"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=user:{{ $node[\"Telegram Trigger\"].json.callback_query?.from?.id || $node[\"Telegram Trigger\"].json.message?.chat?.id }}:platform",
+        "value": "={{ $node[\"Telegram Trigger\"].json.callback_query.data.split(':')[1] }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        512,
+        96
+      ],
+      "id": "3855ebc9-fead-42da-8678-223c4deddf51",
+      "name": "Redis: Save Platform",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.platform }}",
+              "rightValue": "ig",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "id": "404c2f53-d775-4d56-94f3-770944e7a4d4"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {
+          "ignoreCase": true
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        912,
+        96
+      ],
+      "id": "91602a4d-a020-4de8-9d0c-3d865b31da2c",
+      "name": "If Instagram"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=user:{{ $node[\"Telegram Trigger\"].json.callback_query?.from?.id }}:state",
+        "value": "esperando_carrusel"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        16
+      ],
+      "id": "e0179ff3-3e1d-4274-95da-6fcfc3761690",
+      "name": "Redis: State Carousel",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Trigger\"].json.callback_query?.from?.id }}",
+        "text": "¿Deseas que sea un carrusel de imágenes/slides?",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Sí",
+                    "additionalFields": {
+                      "callback_data": "carousel:true"
+                    }
+                  },
+                  {
+                    "text": "No",
+                    "additionalFields": {
+                      "callback_data": "carousel:false"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1328,
+        16
+      ],
+      "id": "f160211b-4865-4074-b53f-6530fc9a74ab",
+      "name": "Telegram: Ask Carousel",
+      "webhookId": "628af1d1-770a-4a48-b17e-2b8fceda878e",
+      "credentials": {
+        "telegramApi": {
+          "id": "LPWS7abI6k68jLQ1",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $node[\"Telegram Trigger\"].json.callback_query?.data }}",
+              "rightValue": "carousel:true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        512,
+        256
+      ],
+      "id": "feff5d90-0a59-471a-a05a-ed6b4bcb93dd",
+      "name": "If Carousel True"
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=user:{{ $node[\"Telegram Trigger\"].json.callback_query?.from?.id }}:state",
+        "value": "esperando_slides"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        928,
+        224
+      ],
+      "id": "e67733be-8452-4f41-80b3-16eeb7660b1d",
+      "name": "Redis: State Slides",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Trigger\"].json.callback_query?.from?.id }}",
+        "text": "Por favor, digita la cantidad de slides/páginas que deseas para tu carrusel:",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1136,
+        224
+      ],
+      "id": "0d192e25-a55f-474e-a476-a6b31e03e5a0",
+      "name": "Telegram: Ask Slides",
+      "webhookId": "aadd7f89-5a65-476b-8465-1817fd90a398",
+      "credentials": {
+        "telegramApi": {
+          "id": "LPWS7abI6k68jLQ1",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=user:{{ $node[\"Telegram Trigger\"].json.message?.chat?.id }}:slides",
+        "value": "={{ $node[\"Telegram Trigger\"].json.message?.text }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        512,
+        400
+      ],
+      "id": "d8f706ac-16e8-4597-b8c9-8e03ee4fd11e",
+      "name": "Redis: Save Slides",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=user:{{ $node[\"Telegram Trigger\"].json.message?.chat?.id || $node[\"Telegram Trigger\"].json.callback_query?.from?.id }}:state",
+        "value": "esperando_aspecto"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1136,
+        368
+      ],
+      "id": "3c5d506a-7468-4ba0-8471-33faaec1f8d5",
+      "name": "Redis: State Aspect",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Trigger\"].json.message?.chat?.id || $node[\"Telegram Trigger\"].json.callback_query?.from?.id }}",
+        "text": "Selecciona la relación de aspecto que quieres generar para tus recursos visuales:",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": [
+            {
+              "row": {
+                "buttons": [
+                  {
+                    "text": "Cuadrado (1:1)",
+                    "additionalFields": {
+                      "callback_data": "aspect:1:1"
+                    }
+                  },
+                  {
+                    "text": "Vertical (4:5)",
+                    "additionalFields": {
+                      "callback_data": "aspect:4:5"
+                    }
+                  },
+                  {
+                    "text": "Historia/Reel (9:16)",
+                    "additionalFields": {
+                      "callback_data": "aspect:9:16"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1328,
+        368
+      ],
+      "id": "c074159c-6036-4297-a7a9-c0713654529f",
+      "name": "Telegram: Ask Aspect",
+      "webhookId": "4aa84e53-39e9-4694-8711-c05194e41aeb",
+      "credentials": {
+        "telegramApi": {
+          "id": "LPWS7abI6k68jLQ1",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=user:{{ $node[\"Telegram Trigger\"].json.callback_query?.from?.id }}:aspect_ratio",
+        "value": "={{ $node[\"Telegram Trigger\"].json.callback_query.data.split('aspect:')[1] }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        512,
+        544
+      ],
+      "id": "25856aa3-94e3-45e5-baa0-34b4c1f7e1d8",
+      "name": "Redis: Save Aspect",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=user:{{ $node[\"Telegram Trigger\"].json.callback_query?.from?.id }}:state",
+        "value": "esperando_tema"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        704,
+        544
+      ],
+      "id": "6a97f241-334f-4eee-a8b9-78a2ecb31407",
+      "name": "Redis: State Theme",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Trigger\"].json.callback_query?.from?.id }}",
+        "text": "¡Entendido! Ahora, ¿de qué tratará el post? Envíame el tema, contexto o puntos clave que quieras incluir.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        912,
+        544
+      ],
+      "id": "12a25d2a-c3d3-4f50-b268-4bfe0f0455c6",
+      "name": "Telegram: Ask Theme",
+      "webhookId": "21e3ffd9-adad-4aec-887a-aa95b19d1810",
+      "credentials": {
+        "telegramApi": {
+          "id": "LPWS7abI6k68jLQ1",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=user:{{ $node[\"Telegram Trigger\"].json.message?.chat?.id }}:theme",
+        "value": "={{ $node[\"Telegram Trigger\"].json.message?.text }}"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        512,
+        688
+      ],
+      "id": "0c8acb26-1371-4f14-b2a8-9b894c0380b3",
+      "name": "Redis: Save Theme",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "set",
+        "key": "=user:{{ $node[\"Telegram Trigger\"].json.message?.chat?.id }}:state",
+        "value": "esperando_imagenes"
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        704,
+        688
+      ],
+      "id": "07bac986-38e3-4f38-8f3f-dfd7729b6ee1",
+      "name": "Redis: State Images",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Trigger\"].json.message?.chat?.id }}",
+        "text": "¡Perfecto, tema anotado! Ahora adjunta las imágenes que quieras incluir en el diseño. Puedes enviarlas de golpe. Cuando termines, escribe o presiona la palabra: Listo.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        912,
+        688
+      ],
+      "id": "14648ca3-22ac-41f4-a8dd-f0e25a2465d8",
+      "name": "Telegram: Ask Images",
+      "webhookId": "52e8b01b-8a8f-4c4f-8017-0795a854e314",
+      "credentials": {
+        "telegramApi": {
+          "id": "LPWS7abI6k68jLQ1",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $node[\"Telegram Trigger\"].json.message?.text }}",
+              "rightValue": "listo",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        512,
+        848
+      ],
+      "id": "40113ae1-1bfe-4de0-a17f-973507f51e32",
+      "name": "If Ready"
+    },
+    {
+      "parameters": {
+        "resource": "file",
+        "fileId": "={{ $node[\"Telegram Trigger\"].json.message?.photo ? $node[\"Telegram Trigger\"].json.message.photo.pop().file_id : \"\" }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        720,
+        960
+      ],
+      "id": "ff0cdc13-debb-407b-b906-96c4aee6f503",
+      "name": "Telegram: Get File",
+      "webhookId": "36db6c3d-e5d9-409f-ac6b-10bab9c648ff",
+      "credentials": {
+        "telegramApi": {
+          "id": "LPWS7abI6k68jLQ1",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/home/node/.n8n-files/user_inputs/input_image_{{ $node[\"Telegram Trigger\"].json.message.chat.id }}_{{ $node[\"Telegram Trigger\"].json.message.media_group_id || $node[\"Telegram Trigger\"].json.message.message_id }}.png",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        928,
+        960
+      ],
+      "id": "96632c0b-98df-4c35-8680-7315ad8a0ecb",
+      "name": "Write File to Disk"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "platform",
+        "key": "=user:{{ $node[\"Telegram Trigger\"].json.message?.chat?.id }}:platform",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        720,
+        816
+      ],
+      "id": "a816281a-51be-4b02-9708-6bfeccf8c4af",
+      "name": "Redis: Get Final Platform",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "theme",
+        "key": "=user:{{ $node[\"Telegram Trigger\"].json.message?.chat?.id }}:theme",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        928,
+        816
+      ],
+      "id": "d99844ae-64ad-47dc-8318-37bcfef0c4fc",
+      "name": "Redis: Get Final Theme",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "aspect_ratio",
+        "key": "=user:{{ $node[\"Telegram Trigger\"].json.message?.chat?.id }}:aspect_ratio",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        816
+      ],
+      "id": "39dddb63-ce45-4436-af30-d86444147f86",
+      "name": "Redis: Get Final Aspect",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "slides",
+        "key": "=user:{{ $node[\"Telegram Trigger\"].json.message?.chat?.id }}:slides",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        1328,
+        816
+      ],
+      "id": "06f839f8-cdad-4092-92a0-7d87ac7a1080",
+      "name": "Redis: Get Final Slides",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://python_renderer:8000",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "platform",
+              "value": "={{ $node[\"Redis: Get Final Platform\"].json.platform }}"
+            },
+            {
+              "name": "theme",
+              "value": "={{ $node[\"Redis: Get Final Theme\"].json.theme }}"
+            },
+            {
+              "name": "aspect_ratio",
+              "value": "={{ $node[\"Redis: Get Final Aspect\"].json.aspect_ratio }}"
+            },
+            {
+              "name": "slides",
+              "value": "={{ $node[\"Redis: Get Final Slides\"].json.slides || 1 }}"
+            },
+            {
+              "name": "chat_id",
+              "value": "={{ $node[\"Telegram Trigger\"].json.message?.chat?.id || $node[\"Telegram Trigger\"].json.callback_query?.from?.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1520,
+        816
+      ],
+      "id": "efaa3fe1-a181-4924-960d-db2524e54038",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "files",
+        "options": {
+          "disableDotNotation": true
+        }
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        816
+      ],
+      "id": "0f0182a1-2480-481b-b4f4-f33926126ede",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "fileSelector": "={{ $json.files }}",
+        "options": {
+          "dataPropertyName": "data"
+        }
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1904,
+        816
+      ],
+      "id": "89568c50-1d58-4e01-b95a-bc93dbac7657",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Trigger\"].json.message?.chat?.id }}",
+        "text": "¡Imagen recibida y guardada! Puedes seguir enviando más imágenes, o presionar/escribir **Listo** para iniciar el diseño.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1152,
+        960
+      ],
+      "id": "664dbacf-7c2c-48cf-a73b-f886f9d5168e",
+      "name": "Telegram: Confirm Image",
+      "webhookId": "9c1bd6cb-963c-4601-84f5-64f70abf70d7",
+      "credentials": {
+        "telegramApi": {
+          "id": "LPWS7abI6k68jLQ1",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $node[\"Telegram Trigger\"].json.message?.chat?.id || $node[\"Telegram Trigger\"].json.callback_query?.from?.id }}",
+        "text": "={{ $json.copy }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1840,
+        976
+      ],
+      "id": "7fa6e96d-9d77-430b-b234-41911731d5b4",
+      "name": "Telegram: Send Post Copy",
+      "webhookId": "ce42adb7-fb87-4c15-aebe-5402ccf2ee28",
+      "credentials": {
+        "telegramApi": {
+          "id": "LPWS7abI6k68jLQ1",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "propertyName": "platform",
+        "key": "=user:{{ $node[\"Telegram Trigger\"].json.callback_query?.from?.id || $node[\"Telegram Trigger\"].json.message?.chat?.id }}:platform",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.redis",
+      "typeVersion": 1,
+      "position": [
+        720,
+        96
+      ],
+      "id": "aa6a5f1a-f331-45a6-9512-08b3b53ba690",
+      "name": "Redis",
+      "credentials": {
+        "redis": {
+          "id": "grfylnsnkr0FcIjr",
+          "name": "Redis account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "sendMediaGroup",
+        "chatId": "={{ $node[\"Telegram Trigger\"].json.message?.chat?.id }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2080,
+        816
+      ],
+      "id": "398d4d21-bdaa-4290-9ebc-7474d9773a8c",
+      "name": "Send a media group message",
+      "webhookId": "600a5aa9-9b11-4bbf-846b-eea809ec2db6",
+      "credentials": {
+        "telegramApi": {
+          "id": "LPWS7abI6k68jLQ1",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Switch Start",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Start": {
+      "main": [
+        [
+          {
+            "node": "Redis: State Social",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis: Get State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: State Social": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Ask Social",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Get State": {
+      "main": [
+        [
+          {
+            "node": "Switch State Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch State Router": {
+      "main": [
+        [
+          {
+            "node": "Redis: Save Platform",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Carousel True",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis: Save Slides",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis: Save Aspect",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis: Save Theme",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If Ready",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Save Platform": {
+      "main": [
+        [
+          {
+            "node": "Redis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Instagram": {
+      "main": [
+        [
+          {
+            "node": "Redis: State Carousel",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis: State Aspect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: State Carousel": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Ask Carousel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Carousel True": {
+      "main": [
+        [
+          {
+            "node": "Redis: State Slides",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Redis: State Aspect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: State Slides": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Ask Slides",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Save Slides": {
+      "main": [
+        [
+          {
+            "node": "Redis: State Aspect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: State Aspect": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Ask Aspect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Save Aspect": {
+      "main": [
+        [
+          {
+            "node": "Redis: State Theme",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: State Theme": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Ask Theme",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Save Theme": {
+      "main": [
+        [
+          {
+            "node": "Redis: State Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: State Images": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Ask Images",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If Ready": {
+      "main": [
+        [
+          {
+            "node": "Redis: Get Final Platform",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Telegram: Get File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telegram: Get File": {
+      "main": [
+        [
+          {
+            "node": "Write File to Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Get Final Platform": {
+      "main": [
+        [
+          {
+            "node": "Redis: Get Final Theme",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Get Final Theme": {
+      "main": [
+        [
+          {
+            "node": "Redis: Get Final Aspect",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Get Final Aspect": {
+      "main": [
+        [
+          {
+            "node": "Redis: Get Final Slides",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis: Get Final Slides": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Send Post Copy",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Send a media group message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write File to Disk": {
+      "main": [
+        [
+          {
+            "node": "Telegram: Confirm Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Redis": {
+      "main": [
+        [
+          {
+            "node": "If Instagram",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "7372e83d-c05e-4db3-bdaa-45bcb1221d0c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "0137bb192cb68db7264af43d045bd35aa61bd7436028f6e0d9e93cc201b3d13c"
+  },
+  "nodeGroups": [],
+  "id": "kDxkFilATND5YfkV",
+  "tags": []
+}
