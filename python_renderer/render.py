@@ -8,6 +8,7 @@ from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 from typing import List
+import base64
 
 # Definición del modelo Pydantic para estructurar la salida de Gemini
 class DesignResponse(BaseModel):
@@ -78,7 +79,8 @@ def generar_diseno_gemini(platform, theme, aspect_ratio, slides_count, chat_id):
     user_inputs_dir = "/home/node/.n8n-files/user_inputs"
     user_files = glob.glob(os.path.join(user_inputs_dir, f"input_image_{chat_id}_*"))
     user_parts = []
-    user_filenames = []
+    user_base64_strings = {}
+    
     for path in user_files:
         ext = os.path.splitext(path)[1].lower()
         if ext in ['.png', '.jpg', '.jpeg', '.webp']:
@@ -86,50 +88,73 @@ def generar_diseno_gemini(platform, theme, aspect_ratio, slides_count, chat_id):
                 mime_type = "image/png" if ext == ".png" else "image/jpeg"
                 with open(path, "rb") as f:
                     data = f.read()
-                user_parts.append(
-                    types.Part.from_bytes(data=data, mime_type=mime_type)
-                )
-                user_filenames.append(os.path.basename(path))
+                
+                # Guardamos para el prompt multimodal
+                user_parts.append(types.Part.from_bytes(data=data, mime_type=mime_type))
+                
+                # Convertimos a Base64 para el HTML injection
+                b64_encoded = base64.b64encode(data).decode('utf-8')
+                fname = os.path.basename(path)
+                user_base64_strings[fname] = f"data:{mime_type};base64,{b64_encoded}"
             except Exception as e:
                 print(f"Error cargando imagen de usuario {path}: {e}")
 
+    # 3. Cargar el Logo SVG dinámico de CyberMinds
+    logo_dir = "./data/n8n_shared_data/logo"
+    logo_svg_content = ""
+    if os.path.exists(logo_dir):
+        svg_files = glob.glob(os.path.join(logo_dir, "*.svg"))
+        if svg_files:
+            try:
+                with open(svg_files[0], "r", encoding="utf-8") as f:
+                    logo_svg_content = f.read()
+            except Exception as e:
+                print(f"Error cargando el logo SVG desde {svg_files[0]}: {e}")
+
+    # 4. Construcción del Prompt Unificado (Sin sobreescrituras)
     prompt_text = f"""
-    Eres un Director de Arte y Diseñador UI/UX Senior de élite especializado en marcas de Ciberseguridad, Tecnología y Diseño Premium de alto impacto.
-    Debes generar el copy optimizado y la estructura visual de un carrusel de post en HTML/CSS de alto impacto basado en estos datos:
-    - Red Social destino: {platform}
-    - Tema/Contexto: {theme}
-    - Relación de Aspecto Solicitada: {aspect_ratio}
+    Eres un Director de Arte de vanguardia y Diseñador de Contenido Senior para marcas de Ciberseguridad de alto impacto (Estilo HorseCiab / CyberMinds). 
+    Tu objetivo es romper el aspecto genérico de "diseño de IA" y generar piezas con fuerza editorial, tipografía masiva y contrastes agresivos.
+
+    DATOS DEL POST:
+    - Plataforma destino: {platform}
+    - Tema central / Contexto: {theme}
+    - Relación de Aspecto: {aspect_ratio}
     - Cantidad de Slides Planificados: {slides_count}
 
-    Tenemos dos conjuntos de imágenes adjuntas en este mensaje:
+    REGLAS ESTRICTAS DE DISEÑO VISUAL (Para evitar desbordes y fuentes pequeñas):
+    1. Tipografía Monumental e Impactante:
+       - Los títulos principales deben ser gigantescos (`font-size: 4.5rem` a `6rem` o `10vw`), en negrita tipográfica absoluta (p. ej., 'Syne' o 'Orbitron' con `font-weight: 900`). Véase el ejemplo de "EL MAYOR HACKEO".
+       - Los textos secundarios deben ser limpios, contrastantes ('Inter' o 'Space Grotesk') y con un tamaño sumamente legible (mínimo `1.5rem` o `24px`). ¡Cero textos microscópicos!
+    
+    2. Composición Editorial y Control de Bordes (Anti-Overflow):
+       - Cada slide debe usar un contenedor maestro con: `box-sizing: border-box; padding: 80px 60px; display: flex; flex-direction: column; justify-content: space-between; height: 100vh; width: 100vw; overflow: hidden;`.
+       - Queda estrictamente PROHIBIDO que los textos o recuadros toquen o se salgan de los bordes físicos del lienzo. El padding de seguridad de 60px-80px no se invade jamás.
+       - No uses cajas flotantes pequeñas con brillos de neón saturados en el medio del lienzo. En su lugar, usa estructuras asimétricas, bloques sólidos con fondos oscuros semi-translúcidos que abarquen secciones elegantes de lado a lado.
+
+    3. Fondos Inmersivos de Ciberseguridad:
+       - No uses fondos negros planos con círculos difuminados de colores aleatorios. Usa texturas de código atenuado, patrones de rejillas tecnológicas (grids), abstracciones de circuitos o imágenes de fondo oscurecidas con un gradiente negro encima (`linear-gradient(to top, rgba(2,9,20,1), rgba(2,9,20,0.4))`) para garantizar un contraste del 100% con los textos blancos o cian.
     """
 
     if template_parts:
         prompt_text += f"\n    A. IMÁGENES DE REFERENCIA DE DISEÑO (TEMPLATES) - {len(template_parts)} archivo(s):\n"
-        prompt_text += "    Úsalos como guía visual estricta para el estilo. Observa la composición tridimensional (3D), capas superpuestas, sombreados neón, texturas de circuitos electrónicos y bordes translúcidos con glassmorphism. El diseño generado DEBE ser igual de premium y tridimensional que estos ejemplos.\n"
+        prompt_text += "    Úsalos como guía visual estricta para el estilo de composición tridimensional (3D), capas superpuestas y contrastes tipográficos masivos.\n"
     
     if user_parts:
-        prompt_text += f"\n    B. IMÁGENES A INCLUIR EN EL DISEÑO - {len(user_parts)} archivo(s):\n"
-        prompt_text += "    Estas imágenes del usuario deben integrarse visualmente dentro del lienzo. Para incluirlas en el HTML/CSS, usa los siguientes nombres de archivo exactos locales:\n"
-        for fname in user_filenames:
-            prompt_text += f"       - file:///home/node/.n8n-files/user_inputs/{fname}\n"
-        prompt_text += "    Integra estas imágenes usando etiquetas <img> o divs de fondo con estilos decorativos 3D. Asegúrate de colocar una máscara oscura o gradiente transparente encima de ellas para garantizar el contraste del texto.\n"
+        prompt_text += f"\n    B. IMÁGENES A INCLUIR EN EL DISEÑO:\n"
+        prompt_text += "    Incrusta estas imágenes del usuario usando exclusivamente estas etiquetas <img src='...'> con sus data-uris correspondientes:\n"
+        for fname, b64_str in user_base64_strings.items():
+            prompt_text += f"       - Para {fname} usa exactamente: src='{b64_str}'\n"
     else:
-        prompt_text += "\n    Nota: El usuario no ha subido imágenes en esta ejecución. Crea el diseño usando maquetación vectorial.\n"
+        prompt_text += "\n    Nota: El usuario no ha subido imágenes específicas en esta ejecución. Genera el diseño usando maquetación e iconografía puramente vectorial.\n"
 
-    prompt_text += f"""
-    Requerimientos Obligatorios de Dirección de Arte en HTML/CSS:
-    1. Estructura y Fondo: Cada slide DEBE ocupar exactamente el 100% del lienzo: `width: 100vw; height: 100vh; margin:0; padding:0; overflow:hidden; position:relative; box-sizing:border-box; background:#020914;`. Usa fondos oscuros cyberpunk.
-    2. Composición, Grillas y Distribución Espacial (CRÍTICO - EVITAR TRASLAPES):
-       - EVITA TRASLAPES: Las tarjetas de texto, títulos, imágenes o iconos NO deben encimarse de forma ilegible. El texto nunca debe tapar elementos decorativos principales (como logos o escudos centrales).
-       - Usa layouts modernos basados en Flexbox (`display: flex; flex-direction: column; justify-content: space-between; align-items: center;`) y Grid (`display: grid; grid-template-columns: repeat(2, 1fr);`) para organizar el contenido limpiamente.
-       - Si usas posicionamiento absoluto para crear efectos de capas superpuestas, define coordenadas y z-index estrictos que garanticen una visualización ordenada.
-       - Distribución Dinámica de Slides:
-         * Genera exactamente {slides_count} slides HTML.
-    3. Tipografía: Importa fuentes modernas desde Google Fonts como 'Syne', 'Orbitron' o 'Share Tech Mono', e 'Inter'.
-    4. Tridimensionalidad y Detalles HUD: Aplica sombras intensas y bordes translúcidos con glassmorphism.
-    """
+    if logo_svg_content:
+        prompt_text += f"\n    C. INCLUSIÓN OBLIGATORIA DEL LOGO (CYBERMINDS):\n"
+        prompt_text += "    Debes incrustar obligatoriamente este código SVG de forma inline dentro del encabezado (header) o pie de página (footer) de CADA slide:\n"
+        prompt_text += f"    ```xml\n{logo_svg_content}\n```\n"
+        prompt_text += "    REGLA DE COLOR DINÁMICO PARA EL LOGO: Como este logo es un isotipo vectorial nativo, analiza el color de fondo del slide actual y modifica directamente los atributos `fill` o `stroke` de sus paths internos en el HTML: usa blanco (`#ffffff`) si el fondo es oscuro, negro (`#000000`) si es muy claro, o su azul original si el contraste editorial se mantiene óptimo.\n"
 
+    # 5. Organizar el contenido para la API multimodal
     if template_parts:
         contents.append("IMÁGENES DE DISEÑO A SEGUIR (ESTILO):")
         contents.extend(template_parts)
@@ -139,7 +164,7 @@ def generar_diseno_gemini(platform, theme, aspect_ratio, slides_count, chat_id):
         
     contents.append(prompt_text)
 
-    system_instruction = f"Eres un diseñador visual de élite. Tu tarea obligatoria es generar exactamente {slides_count} slides en formato HTML/CSS. Cada elemento en la lista 'slides' debe ser un documento HTML5 completo y autónomo. El código HTML/CSS debe ser visualmente impactante, tridimensional, con efectos de capas superpuestas, sombreados neón intensos y glassmorphic, y debe funcionar perfectamente y a pantalla completa dentro de un viewport sin barra de scroll. Evita a toda costa que el texto se traslape con otros elementos."
+    system_instruction = f"Eres un diseñador visual de élite. Tu tarea obligatoria es generar exactamente {slides_count} slides en formato HTML/CSS. Cada elemento en la lista 'slides' debe ser un documento HTML5 completo y autónomo. El código HTML/CSS debe ser visualmente impactante, con tipografías de tamaño masivo, diseño asimétrico editorial, y debe funcionar perfectamente a pantalla completa dentro de un viewport sin barra de scroll. Evita a toda costa que el texto se traslape o se desborde del lienzo."
 
     response = client.models.generate_content(
         model='gemini-2.5-flash',
