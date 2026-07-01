@@ -19,7 +19,7 @@ class DesignResponse(BaseModel):
         description="Lista de páginas o slides del carrusel. Si se solicita generar N slides, esta lista DEBE contener exactamente N elementos. Cada elemento de esta lista DEBE ser un código HTML5 completo, independiente y válido (comenzando con <html> y terminando con </html>), con sus estilos <style> propios incluidos en el <head>."
     )
 
-def ejecutar_render(slides, ratio):
+def ejecutar_render(slides, ratio, transparent=True):
     # Dimensiones base estandarizadas en redes sociales
     dims = {
         '1:1': {'width': 1080, 'height': 1080}, 
@@ -42,15 +42,18 @@ def ejecutar_render(slides, ratio):
             page.set_content(html_content)
             page.wait_for_load_state('networkidle')
             page.evaluate("document.body.style.margin = '0'; document.body.style.padding = '0';")
+            if transparent:
+                page.evaluate("document.body.style.background = 'transparent';")
+                page.evaluate("document.querySelectorAll('*').forEach(el => { if (el.classList.contains('slide-container') || el.id === 'slide-container') el.style.background = 'transparent'; })")
             
             output_path = f"/home/node/.n8n-files/slide_{i+1}.png"
-            page.screenshot(path=output_path, full_page=False)
+            page.screenshot(path=output_path, full_page=False, omit_background=transparent)
             generated_files.append(output_path)
             
         browser.close()
     return generated_files
 
-def generar_diseno_gemini(platform, theme, aspect_ratio, slides_count, chat_id):
+def generar_diseno_gemini(platform, theme, aspect_ratio, slides_count, chat_id, transparent=True):
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("GEMINI_API_KEY no configurado en las variables de entorno.")
@@ -113,8 +116,8 @@ def generar_diseno_gemini(platform, theme, aspect_ratio, slides_count, chat_id):
 
     # 4. Construcción del Prompt Unificado (Sin sobreescrituras)
     prompt_text = f"""
-    Eres un Director de Arte de vanguardia y Diseñador de Contenido Senior para marcas de Ciberseguridad de alto impacto (Estilo HorseCiab / CyberMinds). 
-    Tu objetivo es romper el aspecto genérico de "diseño de IA" y generar piezas con fuerza editorial, tipografía masiva y contrastes agresivos.
+    Eres un Director de Arte de vanguardia y Diseñador de Contenido Senior para marcas de Ciberseguridad de alto impacto (Estilo HorseCiab / CyberMinds).
+    Tu objetivo es imitar y replicar con total fidelidad el estilo visual, la dirección de arte y el diseño gráfico de las imágenes de plantilla (Templates) que se te adjuntan.
 
     DATOS DEL POST:
     - Plataforma destino: {platform}
@@ -122,23 +125,23 @@ def generar_diseno_gemini(platform, theme, aspect_ratio, slides_count, chat_id):
     - Relación de Aspecto: {aspect_ratio}
     - Cantidad de Slides Planificados: {slides_count}
 
-    REGLAS ESTRICTAS DE DISEÑO VISUAL (Para evitar desbordes y fuentes pequeñas):
-    1. Tipografía Monumental e Impactante:
-       - Los títulos principales deben ser gigantescos (`font-size: 4.5rem` a `6rem` o `10vw`), en negrita tipográfica absoluta (p. ej., 'Syne' o 'Orbitron' con `font-weight: 900`). Véase el ejemplo de "EL MAYOR HACKEO".
-       - Los textos secundarios deben ser limpios, contrastantes ('Inter' o 'Space Grotesk') y con un tamaño sumamente legible (mínimo `1.5rem` o `24px`). ¡Cero textos microscópicos!
-    
-    2. Composición Editorial y Control de Bordes (Anti-Overflow):
-       - Cada slide debe usar un contenedor maestro con: `box-sizing: border-box; padding: 80px 60px; display: flex; flex-direction: column; justify-content: space-between; height: 100vh; width: 100vw; overflow: hidden;`.
-       - Queda estrictamente PROHIBIDO que los textos o recuadros toquen o se salgan de los bordes físicos del lienzo. El padding de seguridad de 60px-80px no se invade jamás.
-       - No uses cajas flotantes pequeñas con brillos de neón saturados en el medio del lienzo. En su lugar, usa estructuras asimétricas, bloques sólidos con fondos oscuros semi-translúcidos que abarquen secciones elegantes de lado a lado.
+    REGLAS ESTRICTAS DE EXTRACCIÓN Y COPIA DE ESTILO VISUAL:
+    1. Análisis de Plantillas (Templates):
+       - Examina detalladamente las imágenes de plantilla adjuntas. Tu código HTML/CSS DEBE 'robar' (copiar y adaptar) exactamente sus elementos visuales.
+       - Identifica y replica las fuentes tipográficas utilizadas (su nombre, peso y proporciones relativas para títulos y textos de lectura).
+       - Identifica y replica la paleta de colores exacta: colores de fondo oscuros/negros, tonos de acento (cian neón, azul tecnológico), gradientes y colores de tarjetas.
+       - Recrea las rejillas de fondo (grids), patrones tecnológicos, circuitos vectoriales, sombras, bordes translúcidos (glassmorphism) y detalles estéticos que observes.
+       - Cada slide que generes debe verse como una continuación directa de esta misma serie de diseño gráfico.
 
-    3. Fondos Inmersivos de Ciberseguridad:
-       - No uses fondos negros planos con círculos difuminados de colores aleatorios. Usa texturas de código atenuado, patrones de rejillas tecnológicas (grids), abstracciones de circuitos o imágenes de fondo oscurecidas con un gradiente negro encima (`linear-gradient(to top, rgba(2,9,20,1), rgba(2,9,20,0.4))`) para garantizar un contraste del 100% con los textos blancos o cian.
+    2. Composición Editorial y Prevención de Desbordes (Anti-Overflow):
+       - Cada slide debe usar un contenedor maestro que ocupe todo el viewport sin desbordarse (`box-sizing: border-box; height: 100vh; width: 100vw; overflow: hidden; position: relative;`).
+       - Mantén un margen de padding de seguridad amplio y elegante en los bordes del lienzo. Los textos y tarjetas NO deben tocar los bordes ni salirse de los límites físicos bajo ninguna circunstancia.
+       - Organiza el contenido de forma estructurada, usando layouts limpios y asimétricos con Flexbox y Grid, tal como se muestra en las plantillas.
     """
 
     if template_parts:
         prompt_text += f"\n    A. IMÁGENES DE REFERENCIA DE DISEÑO (TEMPLATES) - {len(template_parts)} archivo(s):\n"
-        prompt_text += "    Úsalos como guía visual estricta para el estilo de composición tridimensional (3D), capas superpuestas y contrastes tipográficos masivos.\n"
+        prompt_text += "    Examina estas imágenes. Son tu única fuente de verdad para la paleta de colores, tipografía monumental, gradientes de fondo y estilos de tarjetas. El HTML generado debe clonar e integrarse con esta dirección de arte.\n"
     
     if user_parts:
         prompt_text += f"\n    B. IMÁGENES A INCLUIR EN EL DISEÑO:\n"
@@ -153,6 +156,15 @@ def generar_diseno_gemini(platform, theme, aspect_ratio, slides_count, chat_id):
         prompt_text += "    Debes incrustar obligatoriamente este código SVG de forma inline dentro del encabezado (header) o pie de página (footer) de CADA slide:\n"
         prompt_text += f"    ```xml\n{logo_svg_content}\n```\n"
         prompt_text += "    REGLA DE COLOR DINÁMICO PARA EL LOGO: Como este logo es un isotipo vectorial nativo, analiza el color de fondo del slide actual y modifica directamente los atributos `fill` o `stroke` de sus paths internos en el HTML: usa blanco (`#ffffff`) si el fondo es oscuro, negro (`#000000`) si es muy claro, o su azul original si el contraste editorial se mantiene óptimo.\n"
+
+    if transparent:
+        prompt_text += """
+    D. MANDATO DE FONDO TRANSPARENTE (EXTREMADAMENTE CRÍTICO):
+       - El usuario solicitó un fondo transparente para poder superponer la imagen generada sobre otros fondos.
+       - Por lo tanto, no debes establecer ningún color de fondo sólido, degradado o imagen de fondo en `html`, `body` o el contenedor principal (ej. `.slide-container`).
+       - Configura obligatoriamente `background: transparent;` (o `background: none;`) en el contenedor maestro y en `body`.
+       - Todos los elementos gráficos flotantes, tarjetas, textos e iconos HUD deben ser visibles pero estar sobre un lienzo completamente transparente.
+        """
 
     # 5. Organizar el contenido para la API multimodal
     if template_parts:
@@ -185,6 +197,8 @@ class RenderHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers['Content-Length'])
         post_data = json.loads(self.rfile.read(content_length).decode('utf-8'))
         
+        transparent = True
+            
         if "theme" in post_data:
             try:
                 platform = post_data.get("platform", "Instagram")
@@ -194,10 +208,10 @@ class RenderHandler(BaseHTTPRequestHandler):
                 chat_id = post_data.get("chat_id", "default")
                 
                 copy, slides_html, temp_user_files = generar_diseno_gemini(
-                    platform, theme, aspect_ratio, slides_count, chat_id
+                    platform, theme, aspect_ratio, slides_count, chat_id, transparent=transparent
                 )
                 
-                files = ejecutar_render(slides_html, aspect_ratio)
+                files = ejecutar_render(slides_html, aspect_ratio, transparent=transparent)
                 
                 for u_path in temp_user_files:
                     try:
@@ -218,7 +232,7 @@ class RenderHandler(BaseHTTPRequestHandler):
                 code = 500
         else:
             try:
-                files = ejecutar_render(post_data.get("slides", []), post_data.get("format", "4:5"))
+                files = ejecutar_render(post_data.get("slides", []), post_data.get("format", "4:5"), transparent=transparent)
                 response = {"status": "success", "files": files}
                 code = 200
             except Exception as e:
